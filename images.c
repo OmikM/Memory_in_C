@@ -68,6 +68,25 @@ int save_image(const char *filename, const struct image *img){
     return (fclose(f)==0)-1;
 }
 
+struct bmp_info {
+    uint32_t pixel_offset;
+    int32_t width;
+    int32_t height;
+    uint16_t bits_per_pixel;
+    uint32_t compression;
+};
+
+// 0 no,  1 yes
+int is_bmp(const char *filename){
+    FILE *f = fopen(filename, "rb");
+    if(f==NULL){return 0;};
+    char temp[2];
+    fread(&temp, sizeof(char), 2, f);
+    fclose(f);
+    if(temp[0]=='B' && temp[1] == 'M'){return 1;}
+    return 0;
+}
+
 struct image *load_image(const char *filename){
     FILE * f = fopen(filename, "rb");
     if(f==NULL){return NULL;};
@@ -110,7 +129,17 @@ uint32_t set_channel(uint32_t pix, uint8_t val, uint8_t mode){
     return pix;
 }
 
-
+void print_pix(uint32_t pix){
+    printf("\x1b[48;2;%d;%d;%dm  \x1b[0m", get_red(pix), get_green(pix), get_blue(pix));
+}
+void print_img(struct image *img){
+    for(uint32_t row = 0; row < img->height; row++){
+        for(uint32_t col = 0; col < img->width; col++){
+            print_pix(*(img->pixels+(row*img->width + col)));
+        }
+        printf("\n");
+    }
+}
 
 
 int main(){
@@ -121,6 +150,11 @@ int main(){
     printf("Color: 0x%08X\n", get_pix(get_Alpha(pixel), get_red(pixel), get_green(pixel), get_blue(pixel)));
 
     printf("Inverted pixel:  0x%08X\n", invert(pixel));
+
+    struct image * img = load_image("test_image");
+    print_img(img);
+    invert_image(img);
+    print_img(img);
 
     return 0;
 }
